@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-
+//test comment
 #define MAX_LINE_LENGTH 256
 
 int isPalindrome(char *s);
