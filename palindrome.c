@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-//test comment
+
 #define MAX_LINE_LENGTH 256
 
 int isPalindrome(char *s);
@@ -13,24 +13,26 @@ void stringToLower(char *s);
 int main(int argc, char *argv[]){
     int numberOfPalindromes = 0;
     int palindromeWord = 0;
-    FILE *file = fopen("words.txt", "r");
-    if(file == NULL){
+    FILE *input = fopen("words.txt", "r");
+    FILE *output = fopen("output.txt", "w");
+    if(input == NULL){
         printf("Error opening file\n");
         return 1;
     }
-
     char line[256];
-    while(fgets(line, sizeof(line), file)){
+    
+    while(fgets(line, sizeof(line), input)){
         line[strlen(line) - 1] = '\0';
         stringToLower(line);
         if(isPalindrome(line)){
-            printf("%s is a palindrome\n ", line);
+            printf("%s is a palindrome\n", line);
+            fprintf(output, "%s\n", line);
             numberOfPalindromes++;
         }
         char* reversed = reverse(line);
-        char* result = binarySearch(file, reversed);
+        char* result = binarySearch(input, reversed);
         if(result != NULL){
-            printf("%s is a palindromic word\n ", result);
+            printf("%s is a palindromic word\n", result);
             palindromeWord++;
         }
         free(reversed);
@@ -38,9 +40,10 @@ int main(int argc, char *argv[]){
     }
     printf("Number of palindromes: %d ", numberOfPalindromes);
     printf("Number of palindromic words: %d ", palindromeWord);
-    fclose(file);
+    fclose(input);
     return 0;
 }
+
 void stringToLower(char *s){
     for(int i = 0; s[i]; i++){
         s[i] = tolower(s[i]);
@@ -58,7 +61,6 @@ char* reverse(char* s){
     }
     result[i] = '\0';
     return result;
-
 }
 
 
