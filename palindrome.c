@@ -9,9 +9,14 @@ int isPalindrome(char *s);
 char* binarySearch(FILE* file, char* key);
 char* reverse(char* s);
 void stringToLower(char *s);
+//void* work(void *arg);
+
+FILE *output;
+FILE *input;
+int palindromic = 0;
 
 int main(int argc, char *argv[]){
-    int numberOfPalindromes = 0;
+    int palindromic = 0;
     int palindromeWord = 0;
     FILE *input = fopen("words.txt", "r");
     FILE *output = fopen("output.txt", "w");
@@ -23,26 +28,41 @@ int main(int argc, char *argv[]){
     
     while(fgets(line, sizeof(line), input)){
         line[strlen(line) - 1] = '\0';
-        stringToLower(line);
-        if(isPalindrome(line)){
-            printf("%s is a palindrome\n", line);
-            fprintf(output, "%s\n", line);
-            numberOfPalindromes++;
-        }
-        char* reversed = reverse(line);
-        char* result = binarySearch(input, reversed);
-        if(result != NULL){
-            printf("%s is a palindromic word\n", result);
-            palindromeWord++;
-        }
-        free(reversed);
-        free(result);
+        char* test = "mimicking"; 
+        if(binarySearch(input, test)){
+            printf("%s found\n", line);
+            break;
+         }
+         else{
+            printf("%s not found\n", test);
+            break;
+         }
     }
-    printf("Number of palindromes: %d ", numberOfPalindromes);
-    printf("Number of palindromic words: %d ", palindromeWord);
+    
+    
     fclose(input);
     return 0;
 }
+/*
+void* work(void *arg){
+    line[strlen(line) - 1] = '\0';
+    stringToLower(line);
+    if(isPalindrome(line)){
+        printf("%s is a palindrome\n", line);
+        fprintf(output, "%s\n", line);
+        palindromic++;
+    }
+    char* reversed = reverse(line);
+    char* result = binarySearch(input, reversed);
+    if(result != NULL){
+        printf("%s is a palindromic word\n", result);
+        palindromic++;
+    }
+    free(reversed);
+    free(result);
+    return NULL;
+}
+*/
 
 void stringToLower(char *s){
     for(int i = 0; s[i]; i++){
@@ -66,13 +86,17 @@ char* reverse(char* s){
 
 char* binarySearch(FILE* file, char* key){
     long originalPosition = ftell(file);
-    fseek(file, 0, SEEK_END);
     long left = 0;
-    long right = ftell(file) / MAX_LINE_LENGTH;
+    fseek(file, 0, SEEK_END);
+    long right = ftell(file);
     while(left <= right){
         long mid = left + (right - left ) / 2;
-        fseek(file, mid * MAX_LINE_LENGTH, SEEK_SET);
-        char line[MAX_LINE_LENGTH];
+        fseek(file, mid, SEEK_SET);
+        if (mid != 0) { // if not at the start of the file
+            int c;
+            while ((c = fgetc(file)) != '\n' && c != EOF); // discard until newline
+    }
+char line[MAX_LINE_LENGTH];
         fgets(line, sizeof(line), file);
         line[strlen(line) - 1] = '\0';
         int comparison = strcmp(line, key);
