@@ -1,25 +1,97 @@
+// C program to compare two files character by character.
+ 
+
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
-int main() {
-    FILE *file1 = fopen("outputJonas.txt", "r");
-    FILE *file2 = fopen("outputDeniel.txt", "r");
+/* Function declaration */
+int compareFile(FILE * fPtr1, FILE * fPtr2, int * line, int * col);
 
-    if (file1 == NULL || file2 == NULL) {
-        printf("Error opening file\n");
-        return 1;
+
+int main()
+{
+    /* File pointer to hold reference of input file */
+    FILE * fPtr1; 
+    FILE * fPtr2;
+    char path1[100];
+    char path2[100];
+
+    int diff;
+    int line, col;
+
+    /*  Open all files to compare */
+    fPtr1 = fopen("output.txt", "r");
+    fPtr2 = fopen("outputDeniel.txt", "r");
+
+    /* fopen() return NULL if unable to open file in given mode. */
+    if (fPtr1 == NULL || fPtr2 == NULL)
+    {
+        /* Unable to open file hence exit */
+        printf("\nUnable to open file.\n");
+        printf("Please check whether file exists and you have read privilege.\n");
+        exit(EXIT_FAILURE);
     }
 
-    char word1[64], word2[64];
 
-    while (fscanf(file1, "%63s", word1) == 1 && fscanf(file2, "%63s", word2) == 1) {
-        if (strcmp(word1, word2) != 0) {
-            printf("Words differ: %s, %s\n", word1, word2);
-        }
+    /* Call function to compare file */
+    diff = compareFile(fPtr1, fPtr2, &line, &col);
+
+    if (diff == 0)
+    {
+        printf("\nBoth files are equal.");
+    }
+    else 
+    {
+        printf("\nFiles are not equal.\n");
+        printf("Line: %d, col: %d\n", line, col);
     }
 
-    fclose(file1);
-    fclose(file2);
+
+    /* Finally close files to release resources */
+    fclose(fPtr1);
+    fclose(fPtr2);
 
     return 0;
+}
+
+
+/**
+ * Function to compare two files.
+ * Returns 0 if both files are equivalent, otherwise returns
+ * -1 and sets line and col where both file differ.
+ */
+int compareFile(FILE * fPtr1, FILE * fPtr2, int * line, int * col)
+{
+    char ch1, ch2;
+
+    *line = 1;
+    *col  = 0;
+
+    do
+    {
+        // Input character from both files
+        ch1 = fgetc(fPtr1);
+        ch2 = fgetc(fPtr2);
+        
+        // Increment line 
+        if (ch1 == '\n')
+        {
+            *line += 1;
+            *col = 0;
+        }
+
+        // If characters are not same then return -1
+        if (ch1 != ch2)
+            return -1;
+
+        *col  += 1;
+
+    } while (ch1 != EOF && ch2 != EOF);
+
+
+    /* If both files have reached end */
+    if (ch1 == EOF && ch2 == EOF)
+        return 0;
+    else
+        return -1;
 }
