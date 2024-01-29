@@ -5,11 +5,12 @@
 #include <pthread.h>
 #include "queue.c"
 
-int numberOfWords = 25143;
+//#define numberOfWords 25143 
+#define numberOfWords 104334
 int countedWords = 0;
 int palindromes = 0;
 int palindromic = 0;
-const char *words[25143];
+const char *words[numberOfWords];
 queue *bagoftasks;
 
 FILE *input;
@@ -18,7 +19,7 @@ FILE *output;
 char *reverse(char *word);
 int palindrome(char *word);
 void printQueue(queue *q);
-int compare_function(const void *a, const void *b);
+int compare(const void *a, const void *b);
 void *readFile(queue *taskQueue);
 char *removeApostrophes(const char *str);
 void *work();
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     bagoftasks = create_queue();
-    input = fopen("words.txt", "r");
+    input = fopen("words2.txt", "r");
     output = fopen("output.txt", "w");
 
 
@@ -90,25 +91,23 @@ void *work()
         }
         if (palindrome(word))
         {
-            pthread_mutex_lock(&mutex);
+
             fprintf(output, "%s\n", word);
             localCount++;
-            pthread_mutex_unlock(&mutex);
+
         }
         else
         {
-            char* rev = reverse(word);
-           // printf("Debug: Reversed word: %s\n", rev);
-            pthread_mutex_lock(&mutex);
-            //linearSearch(rev) != -1
-            //bsearch(&rev, words, numberOfWords, sizeof(char *), compare) != NULL
-            if (linearSearch(reverse(word)) != -1)
+            // linearSearch(reverse(word)) != -1 
+            //bsearch(&reversed, words, numberOfWords, sizeof(char *), compare) != NULL
+            char* reversed = reverse(word);
+            if (bsearch(&reversed, words, numberOfWords, sizeof(char *), compare) != NULL)
             {
                 localCount++;
-                pthread_mutex_unlock(&mutex); // Unlock the mutex before continue
+         // Unlock the mutex before continue
                 continue;
             }
-            pthread_mutex_unlock(&mutex);
+
         }
         free(word); // Remember to free the word after processing
     }
@@ -120,7 +119,6 @@ void *work()
 int linearSearch(char *key) {
     for (int i = 0; i < numberOfWords; i++) {
         if (strcasecmp(words[i], key) == 0){
-            printf("%s == %s\n", words[i], key);
             return i; // Return the index of the found word
         }
     }
@@ -143,32 +141,14 @@ char *removeApostrophes(const char *str)
     return newStr;
 }
 
-int compare_function(const void *a, const void *b) {
-    const char *str1 = *(const char **)a;
-    const char *str2 = *(const char **)b;
-
-    while (*str1 && *str2) { // while the two strings are not empty
-        if (*str1 == '\'') { // if the character is an apostrophe
-            str1++; // skip it
-            continue;
-        }
-        if (*str2 == '\'') {
-            str2++;
-            continue;
-        }
-
-        if (tolower((unsigned char)*str1) != tolower((unsigned char)*str2)) { // if the two characters are not equal
-            return tolower((unsigned char)*str1) - tolower((unsigned char)*str2); // return the difference
-        }
-
-        str1++; // increment the pointers
-        str2++; // increment the pointers
-    }
-
-    while (*str1 == '\'') str1++; // skip the apostrophes
-    while (*str2 == '\'') str2++; // skip the apostrophes
-
-    return *str1 - *str2; // return the difference
+int compare(const void *a, const void *b)
+{
+    char *str1 = removeApostrophes(*(const char **)a);
+    char *str2 = removeApostrophes(*(const char **)b);
+    int result = strcasecmp(str1, str2);
+    free(str1);
+    free(str2);
+    return result;
 }
 
 char *reverse(char *word)
@@ -203,7 +183,6 @@ void *readFile(queue *taskQueue)
         words[index] = word; // Add word to words array
         index++;
     }
-    numberOfWords = index; // Set numberOfWords to the number of words read
     free(line);
     fclose(input);
 }
