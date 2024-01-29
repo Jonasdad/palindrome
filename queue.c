@@ -30,14 +30,12 @@ void enqueue(queue* q, void* data) {
     new_node->data = strdup(data);
     new_node->next = NULL;
 
-    pthread_mutex_lock(&q->lock);
     if (q->tail == NULL) {
         q->head = q->tail = new_node;
     } else {
         q->tail->next = new_node;
         q->tail = new_node;
     }
-    pthread_mutex_unlock(&q->lock);
 }
 
 void* dequeue(queue* q) {

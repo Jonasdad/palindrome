@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
     }
 
     printf("Counted palindromic words: %d\n", countedWords);
-    printf("Number of words read: %d\n", numberOfWords);
     fclose(output);
     return 0;
 }
@@ -86,13 +85,14 @@ void *work()
         char *word = dequeue(bagoftasks);
         if (word == NULL)
         {
-            printf("Debug: No more tasks\n");
+
             break; // No more tasks
         }
         if (palindrome(word))
         {
-
+            pthread_mutex_lock(&mutex);
             fprintf(output, "%s\n", word);
+            pthread_mutex_unlock(&mutex);
             localCount++;
 
         }
@@ -103,6 +103,9 @@ void *work()
             char* reversed = reverse(word);
             if (bsearch(&reversed, words, numberOfWords, sizeof(char *), compare) != NULL)
             {
+                pthread_mutex_lock(&mutex);
+                fprintf(output, "%s\n", word);
+                pthread_mutex_unlock(&mutex);
                 localCount++;
          // Unlock the mutex before continue
                 continue;
