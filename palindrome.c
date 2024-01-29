@@ -14,14 +14,14 @@ queue *bagoftasks;
 
 FILE *input;
 FILE *output;
-FILE *logfile;
+
 char *reverse(char *word);
 int palindrome(char *word);
 void printQueue(queue *q);
 int compare_function(const void *a, const void *b);
 void *readFile(queue *taskQueue);
 char *removeApostrophes(const char *str);
-void *work(void *counter);
+void *work();
 int linearSearch(char *key);
 
 pthread_mutex_t mutex;
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     bagoftasks = create_queue();
     input = fopen("words.txt", "r");
     output = fopen("output.txt", "w");
-    logfile = fopen("log.txt", "w");
+
 
     if (input == NULL)
     {
@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     readFile(bagoftasks);
-    fclose(input);
     //printQueue(bagoftasks);
     pthread_mutex_init(&mutex, NULL);
     int numberOfThreads = atoi(argv[1]);
@@ -78,7 +77,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void *work(void *arg)
+void *work()
 {
     int localCount = 0;
     while (1)
@@ -98,14 +97,13 @@ void *work(void *arg)
         }
         else
         {
-            char *rev = reverse(word);
+            char* rev = reverse(word);
            // printf("Debug: Reversed word: %s\n", rev);
             pthread_mutex_lock(&mutex);
             //linearSearch(rev) != -1
-            //bsearch(&rev, words, numberOfWords, sizeof(char *), compare_function) != NULL
-            if (linearSearch(rev) != -1)
+            //bsearch(&rev, words, numberOfWords, sizeof(char *), compare) != NULL
+            if (linearSearch(reverse(word)) != -1)
             {
-                fprintf(logfile, "Debug: %s is a semordnilap\n", word);
                 localCount++;
                 pthread_mutex_unlock(&mutex); // Unlock the mutex before continue
                 continue;
@@ -114,15 +112,15 @@ void *work(void *arg)
         }
         free(word); // Remember to free the word after processing
     }
-    printf("Debug: Thread finished, found %d semordnilaps\n", localCount);
+//    printf("Debug: Thread finished, found %d semordnilaps\n", localCount);
     int *result = malloc(sizeof(int));
     *result = localCount;
     return result;
 }
 int linearSearch(char *key) {
     for (int i = 0; i < numberOfWords; i++) {
-        if (strcasecmp(words[i], key) == 0) {
-            printf("Debug: Found %s at index %d\n", key, i);
+        if (strcasecmp(words[i], key) == 0){
+            printf("%s == %s\n", words[i], key);
             return i; // Return the index of the found word
         }
     }
@@ -176,7 +174,7 @@ int compare_function(const void *a, const void *b) {
 char *reverse(char *word)
 {
     int length = strlen(word);
-    char *reversed = malloc(sizeof(char) * (length + 1)); // Allocate space for null character
+    char *reversed = strdup(word); // Allocate space for null character
     for (int i = 0; i < length; i++)
     {
         reversed[i] = word[length - i - 1];
@@ -200,8 +198,7 @@ void *readFile(queue *taskQueue)
         for(int i = 0; line[i]; i++){
             line[i] = tolower(line[i]); // Convert to lowercase
         }
-        char *word = malloc(sizeof(char) * 64);
-        strcpy(word, line);
+        char* word = strdup(line);
         enqueue(taskQueue, word);
         words[index] = word; // Add word to words array
         index++;

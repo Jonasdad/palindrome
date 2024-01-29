@@ -27,7 +27,7 @@ void enqueue(queue* q, void* data) {
     if (new_node == NULL) {
         return;
     }
-    new_node->data = data;
+    new_node->data = strdup(data);
     new_node->next = NULL;
 
     pthread_mutex_lock(&q->lock);
