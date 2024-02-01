@@ -5,25 +5,20 @@
 #include <pthread.h>
 #include "queue.c"
 
-//#define numberOfWords 25143 
-#define numberOfWords 104334
+#define MAX_WORDS 25143
+
 int countedWords = 0;
-int palindromes = 0;
-int palindromic = 0;
-const char *words[numberOfWords];
+const char *words[25143];
+
 queue *bagoftasks;
 
 FILE *input;
 FILE *output;
-
 char *reverse(char *word);
 int palindrome(char *word);
-void printQueue(queue *q);
 int compare(const void *a, const void *b);
 void *readFile(queue *taskQueue);
-char *removeApostrophes(const char *str);
-void *work();
-int linearSearch(char *key);
+void *work(void *counter);
 
 pthread_mutex_t mutex;
 
@@ -34,9 +29,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     bagoftasks = create_queue();
-    input = fopen("words2.txt", "r");
+    input = fopen("words.txt", "r");
     output = fopen("output.txt", "w");
-
 
     if (input == NULL)
     {
@@ -44,7 +38,9 @@ int main(int argc, char *argv[])
         return 1;
     }
     readFile(bagoftasks);
-    //printQueue(bagoftasks);
+    fclose(input);
+    qsort(words, MAX_WORDS, sizeof(char *), compare);
+
     pthread_mutex_init(&mutex, NULL);
     int numberOfThreads = atoi(argv[1]);
     pthread_t handler[numberOfThreads];
@@ -76,8 +72,7 @@ int main(int argc, char *argv[])
     fclose(output);
     return 0;
 }
-
-void *work()
+void *work(void *arg)
 {
     int localCount = 0;
     while (1)
@@ -85,75 +80,39 @@ void *work()
         char *word = dequeue(bagoftasks);
         if (word == NULL)
         {
-
             break; // No more tasks
         }
         if (palindrome(word))
         {
             pthread_mutex_lock(&mutex);
             fprintf(output, "%s\n", word);
-            pthread_mutex_unlock(&mutex);
             localCount++;
-
+            pthread_mutex_unlock(&mutex);
         }
         else
         {
-            // linearSearch(reverse(word)) != -1 
-            //bsearch(&reversed, words, numberOfWords, sizeof(char *), compare) != NULL
-            char* reversed = reverse(word);
-            if (bsearch(&reversed, words, numberOfWords, sizeof(char *), compare) != NULL)
+            char *rev = reverse(word);
+            if (bsearch(&rev, words, MAX_WORDS, sizeof(char*), compare) != NULL)
             {
                 pthread_mutex_lock(&mutex);
                 fprintf(output, "%s\n", word);
-                pthread_mutex_unlock(&mutex);
                 localCount++;
-         // Unlock the mutex before continue
+                pthread_mutex_unlock(&mutex); // Unlock the mutex before continue
                 continue;
             }
-
         }
         free(word); // Remember to free the word after processing
     }
-//    printf("Debug: Thread finished, found %d semordnilaps\n", localCount);
     int *result = malloc(sizeof(int));
     *result = localCount;
     return result;
 }
-int linearSearch(char *key) {
-    for (int i = 0; i < numberOfWords; i++) {
-        if (strcasecmp(words[i], key) == 0){
-            return i; // Return the index of the found word
-        }
-    }
-    return -1; // Return -1 if the word was not found
-}
-
-char *removeApostrophes(const char *str)
-{
-    char *newStr = malloc(strlen(str) + 1);
-    int i = 0;
-    while (*str)
-    {
-        if (*str != '\'')
-        {
-            newStr[i++] = *str;
-        }
-        str++;
-    }
-    newStr[i] = '\0';
-    return newStr;
-}
-
 int compare(const void *a, const void *b)
 {
-    char *str1 = removeApostrophes(*(const char **)a);
-    char *str2 = removeApostrophes(*(const char **)b);
-    int result = strcasecmp(str1, str2);
-    free(str1);
-    free(str2);
-    return result;
+    const char **ia = (const char **)a;
+    const char **ib = (const char **)b;
+    return strcasecmp(*ia, *ib);
 }
-
 char *reverse(char *word)
 {
     int length = strlen(word);
@@ -165,11 +124,11 @@ char *reverse(char *word)
     reversed[length] = '\0'; // Null-terminate the reversed string
     return reversed;
 }
-
 void *readFile(queue *taskQueue)
 {
     char *line = malloc(sizeof(char) * 64);
     int index = 0;
+    int numberOfWords = 0;
 
     while (fgets(line, 64, input))
     {
@@ -181,15 +140,15 @@ void *readFile(queue *taskQueue)
         for(int i = 0; line[i]; i++){
             line[i] = tolower(line[i]); // Convert to lowercase
         }
-        char* word = strdup(line);
+        char *word = strdup(line);
         enqueue(taskQueue, word);
         words[index] = word; // Add word to words array
         index++;
     }
+    numberOfWords = index; // Set numberOfWords to the number of words read
     free(line);
     fclose(input);
 }
-
 int palindrome(char *word)
 {
     char *reversed = reverse(word);
@@ -199,17 +158,4 @@ int palindrome(char *word)
     }
     free(reversed);
     return 0;
-}
-
-void printQueue(queue *q)
-{
-    int size = 0;
-    node *temp = q->head;
-    while (temp != NULL)
-    {
-        printf("%s\n", (char *)temp->data);
-        temp = temp->next;
-        size++;
-    }
-    printf("Queue size: %d\n", size);
 }
