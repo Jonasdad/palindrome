@@ -5,33 +5,37 @@
 #include <pthread.h>
 #include "queue.c"
 
-#define MAX_WORDS 25143
-
+//#define MAX_WORDS 25143
+#define MAX_WORDS 104335
+#define PATH "words2.txt"
 int countedWords = 0;
-const char *words[25143];
-
+const char *words[MAX_WORDS];
+const char *words2[MAX_WORDS];
 queue *bagoftasks;
 
 FILE *input;
 FILE *output;
+FILE *logg;
+
 char *reverse(char *word);
 int palindrome(char *word);
-int compare(const void *a, const void *b);
+int compare404(const void *a, const void *b);
+int compare426(const void *a, const void *b);
 void *readFile(queue *taskQueue);
-void *work(void *counter);
+void *work();
 
 pthread_mutex_t mutex;
 
 int main(int argc, char *argv[])
 {
-    if(argv[1] == NULL){
+    if((argv[1] == NULL) || (argc > 2)){
         printf("Usage: No argument given\n");
         return 1;
     }
     bagoftasks = create_queue();
-    input = fopen("words.txt", "r");
+    input = fopen(PATH, "r");
     output = fopen("output.txt", "w");
-
+    logg = fopen("log.txt", "w");
     if (input == NULL)
     {
         printf("Error opening file\n");
@@ -39,7 +43,7 @@ int main(int argc, char *argv[])
     }
     readFile(bagoftasks);
     fclose(input);
-    qsort(words, MAX_WORDS, sizeof(char *), compare);
+    qsort(words, MAX_WORDS, sizeof(char *), compare404);
 
     pthread_mutex_init(&mutex, NULL);
     int numberOfThreads = atoi(argv[1]);
@@ -54,7 +58,6 @@ int main(int argc, char *argv[])
             printf("Error: pthread_create failed\n");
             return 1;
         }
-        pthread_t tid = pthread_self();
     }
 
     for(int i = 0; i < numberOfThreads; i++){
@@ -72,7 +75,7 @@ int main(int argc, char *argv[])
     fclose(output);
     return 0;
 }
-void *work(void *arg)
+void *work()
 {
     int localCount = 0;
     while (1)
@@ -92,7 +95,7 @@ void *work(void *arg)
         else
         {
             char *rev = reverse(word);
-            if (bsearch(&rev, words, MAX_WORDS, sizeof(char*), compare) != NULL)
+            if (bsearch(&rev, words, MAX_WORDS, sizeof(char*), compare404) != NULL)
             {
                 pthread_mutex_lock(&mutex);
                 fprintf(output, "%s\n", word);
@@ -107,11 +110,42 @@ void *work(void *arg)
     *result = localCount;
     return result;
 }
-int compare(const void *a, const void *b)
-{
+void remove_special_characters(char *str) {
+    int i = 0, j = 0;
+    while (str[i]) {
+        if (isalnum(str[i]) || str[i] == ' ') {
+            str[j] = str[i];
+            j++;
+        }
+        i++;
+    }
+    str[j] = '\0';
+}
+
+
+int compare404(const void*a, const void *b){
     const char **ia = (const char **)a;
     const char **ib = (const char **)b;
     return strcasecmp(*ia, *ib);
+}
+
+int compare426(const void *a, const void *b)
+{
+    const char **ia = (const char **)a;
+    const char **ib = (const char **)b;
+
+    char *copy_a = strdup(*ia);
+    char *copy_b = strdup(*ib);
+
+    remove_special_characters(copy_a);
+    remove_special_characters(copy_b);
+
+    int result = strcasecmp(copy_a, copy_b);
+
+    free(copy_a);
+    free(copy_b);
+
+    return result;
 }
 char *reverse(char *word)
 {
@@ -128,7 +162,6 @@ void *readFile(queue *taskQueue)
 {
     char *line = malloc(sizeof(char) * 64);
     int index = 0;
-    int numberOfWords = 0;
 
     while (fgets(line, 64, input))
     {
@@ -143,9 +176,9 @@ void *readFile(queue *taskQueue)
         char *word = strdup(line);
         enqueue(taskQueue, word);
         words[index] = word; // Add word to words array
+        words2[index] = word;
         index++;
     }
-    numberOfWords = index; // Set numberOfWords to the number of words read
     free(line);
     fclose(input);
 }

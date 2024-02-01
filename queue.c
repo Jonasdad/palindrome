@@ -1,6 +1,8 @@
-#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-
+#include <ctype.h>
+#include <pthread.h>
 typedef struct node {
     void* data;
     struct node* next;
