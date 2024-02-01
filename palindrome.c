@@ -4,10 +4,11 @@
 #include <ctype.h>
 #include <pthread.h>
 #include "queue.c"
+#include <time.h>
 
-//#define MAX_WORDS 25143
-#define MAX_WORDS 104335
-#define PATH "words2.txt"
+#define MAX_WORDS 25143
+//#define MAX_WORDS 104335
+#define PATH "words.txt"
 int countedWords = 0;
 const char *words[MAX_WORDS];
 const char *words2[MAX_WORDS];
@@ -50,29 +51,40 @@ int main(int argc, char *argv[])
     pthread_t handler[numberOfThreads];
     int *results[numberOfThreads];
 
-    for (int i = 0; i < numberOfThreads; i++)
+    clock_t start, end;
+double cpu_time_used;
+
+start = clock();
+
+for (int i = 0; i < numberOfThreads; i++)
+{
+    int ret = pthread_create(&handler[i], NULL, &work, NULL);
+    if (ret != 0)
     {
-        int ret = pthread_create(&handler[i], NULL, &work, NULL);
-        if (ret != 0)
-        {
-            printf("Error: pthread_create failed\n");
-            return 1;
-        }
+        printf("Error: pthread_create failed\n");
+        return 1;
     }
+}
 
-    for(int i = 0; i < numberOfThreads; i++){
-        pthread_join(handler[i], (void**)&results[i]);
-    }
+for(int i = 0; i < numberOfThreads; i++){
+    pthread_join(handler[i], (void**)&results[i]);
+}
 
-    for (int i = 0; i < numberOfThreads; i++)
-    {
-        printf("Thread %d found %d palindromic words\n", i, *results[i]);
-        countedWords += *results[i];
-        free(results[i]); // Remember to free the result after printing
-    }
+for (int i = 0; i < numberOfThreads; i++)
+{
+    printf("Thread %d found %d palindromic words\n", i, *results[i]);
+    countedWords += *results[i];
+    free(results[i]); // Remember to free the result after printing
+}
 
-    printf("Counted palindromic words: %d\n", countedWords);
-    fclose(output);
+printf("Counted palindromic words: %d\n", countedWords);
+
+end = clock();
+cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+printf("Time taken: %f seconds\n", cpu_time_used);
+
+fclose(output);
     return 0;
 }
 void *work()
